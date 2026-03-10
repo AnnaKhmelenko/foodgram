@@ -1,7 +1,14 @@
-frontend/node_modules
-infra/frontend/build
-.env
+pwd
 
+frontend/static/
+frontend/asset-manifest.json
+frontend/index.html
+frontend/manifest.json
+frontend/robots.txt
+frontend/logo192.png
+frontend/logo512.png
+frontend/favicon.ico
+frontend/favicon.png
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
