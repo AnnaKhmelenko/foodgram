@@ -1,76 +1,40 @@
-from django.contrib.auth.models import AbstractUser, BaseUserManager
-from django.core.exceptions import ValidationError
+from django.contrib.auth.models import AbstractUser
+from django.core.validators import RegexValidator
 from django.db import models
 
-
-class UserManager(BaseUserManager):
-    use_in_migrations = True
-
-    def create_user(
-            self,
-            email,
-            username,
-            first_name,
-            last_name,
-            password=None,
-            **extra_fields):
-        if not email:
-            raise ValueError('У пользователя должен быть email.')
-        email = self.normalize_email(email)
-        user = self.model(
-            email=email,
-            username=username,
-            first_name=first_name,
-            last_name=last_name,
-            **extra_fields
-        )
-        user.set_password(password)
-        user.save(using=self._db)
-        return user
-
-    def create_superuser(
-            self,
-            email, username,
-            first_name, last_name,
-            password=None,
-            **extra_fields):
-        extra_fields.setdefault('is_staff', True)
-        extra_fields.setdefault('is_superuser', True)
-        extra_fields.setdefault('is_active', True)
-
-        if extra_fields.get('is_staff') is not True:
-            raise ValueError('Суперпользователь должен иметь is_staff=True.')
-        if extra_fields.get('is_superuser') is not True:
-            raise ValueError(
-                'Суперпользователь должен иметь is_superuser=True.')
-
-        return self.create_user(
-            email=email,
-            username=username,
-            first_name=first_name,
-            last_name=last_name,
-            password=password,
-            **extra_fields
-        )
+from users.constants import (
+    FIRST_NAME_MAX_LENGTH,
+    LAST_NAME_MAX_LENGTH,
+    USERNAME_MAX_LENGTH,
+)
 
 
 class User(AbstractUser):
+    username_validator = RegexValidator(
+        regex=r'^[\w.@+-]+\Z',
+        message=(
+            'Введите корректный username. Допустимы буквы, цифры '
+            'и символы @/./+/-/_.'
+        ),
+    )
+
     email = models.EmailField(
         'Адрес электронной почты',
         unique=True,
     )
     username = models.CharField(
         'Никнейм',
-        max_length=150,
+        max_length=USERNAME_MAX_LENGTH,
         unique=True,
+        validators=(username_validator,),
     )
     first_name = models.CharField(
         'Имя',
-        max_length=150,
+        max_length=FIRST_NAME_MAX_LENGTH,
     )
     last_name = models.CharField(
         'Фамилия',
-        max_length=150,
+        max_length=LAST_NAME_MAX_LENGTH,
     )
     avatar = models.ImageField(
         'Аватар',
@@ -82,10 +46,8 @@ class User(AbstractUser):
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username', 'first_name', 'last_name']
 
-    objects = UserManager()
-
     class Meta:
-        ordering = ('id',)
+        ordering = ('email',)
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
 
@@ -98,13 +60,13 @@ class Subscription(models.Model):
         User,
         on_delete=models.CASCADE,
         related_name='subscriptions',
-        verbose_name='Подписчик'
+        verbose_name='Подписчик',
     )
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='subscribers',
-        verbose_name='Автор'
+        verbose_name='Автор',
     )
 
     class Meta:
@@ -113,17 +75,13 @@ class Subscription(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=('user', 'author'),
-                name='unique_subscription'
-            )
+                name='unique_subscription',
+            ),
+            models.CheckConstraint(
+                check=~models.Q(user=models.F('author')),
+                name='prevent_self_subscription',
+            ),
         ]
-
-    def clean(self):
-        if self.user == self.author:
-            raise ValidationError('Нельзя подписаться на самого себя.')
-
-    def save(self, *args, **kwargs):
-        self.clean()
-        return super().save(*args, **kwargs)
 
     def __str__(self):
         return f'{self.user} подписан на {self.author}'

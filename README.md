@@ -1,96 +1,103 @@
 # Foodgram
 
-# Описание проекта
+## Описание проекта
 
-- Foodgram — сервис для публикации и хранения рецептов.
+**Foodgram** — сервис для публикации и хранения рецептов.
 
-- Пользователи могут публиковать рецепты, добавлять их в избранное,
-подписываться на авторов и формировать список покупок из выбранных
-рецептов с возможностью скачать его в текстовом формате.
+Пользователи могут:
+- публиковать рецепты;
+- добавлять их в избранное;
+- подписываться на авторов;
+- формировать список покупок;
+- скачивать список ингредиентов в текстовом формате.
 
-# Развертывание проекта Foodgram с использованием Docker
-# Детали:
-- Перед началом работы убедитесь, что Docker установлен и запущен:
+
+## Развертывание проекта с Docker
+
+Перед началом убедитесь, что Docker установлен и запущен:
+
+```bash
+sudo systemctl status docker
+```
+
+### Установка Docker
+
+```bash
+sudo apt update
+sudo apt install curl
+
+curl -fsSL https://get.docker.com -o install-docker.sh
+
+sudo apt install docker-compose-plugin
 
 sudo systemctl status docker
+```
 
-- Инструкция по установке Docker:
 
-- Обновите пакеты и установите curl:
+## Запуск проекта
 
-    ~ sudo apt update
-    ~ sudo apt install curl
+```bash
+mkdir foodgram
+cd foodgram
+```
 
-- Загрузите официальный скрипт установки Docker:
+Склонируйте репозиторий:
 
-    ~ curl -fsSL https://get.docker.com -o install-docker.sh
+```bash
+git clone https://github.com/AnnaHmelenko/foodgram.git
+cd foodgram/infra
+```
 
-- Установите Docker Compose:
+Запустите контейнеры:
 
-    ~ sudo apt install docker-compose-plugin
+```bash
+sudo docker compose up -d
+```
 
-- Проверьте статус Docker:
 
-    ~ sudo systemctl status docker
+## Настройка переменных окружения
 
-- Если же возникают проблемы с установкой, то обратитесь на официальный сайт Docker.
+Создайте файл `.env` в папке `infra`:
 
-# Запуск проекта
+```bash
+cp .env.example .env
+```
 
-- Создайте директорию для проекта и перейдите в неё:
 
-    ~ mkdir foodgram
-    ~ cd foodgram
+## 🛠 Первоначальная настройка
 
-- Загрузите в созданную директорию проект;
+```bash
+sudo docker compose exec backend python manage.py migrate
+sudo docker compose exec backend python manage.py collectstatic --noinput
+```
 
-- Загрузите файл docker-compose.yml и запустите контейнеры:
 
-    ~ sudo docker compose -f docker-compose.yml up -d
+## Загрузка ингредиентов
 
-Docker автоматически загрузит образы, создаст и запустит контейнеры, объединив их в единую сеть.
+```bash
+sudo docker compose exec backend python manage.py load_ingredients
+```
 
-# Настройка переменных окружения
 
-- Создайте в папке infra файл .env и заполните его по примеру .env.example.
+## Доступ к проекту
 
-- Важно: если нет необходимости использовать PostgreSQL, то просто скопируйте содержимое файла .env.example, в проекте имеется функция, которая загрузит все необходимые таблицы в дальнейших пунктах автоматически в файл db.sqlite3 и пока проект запущен - данные будут сохраняться в данном файле, после завершения или перезапуска проекта данные будут удалены. 
-В противном случае заполните правильно данные вашей БД. Не забудьте поменять значение "USE_PGSQL" на значение True.
+- http://localhost
+- http://127.0.0.1
 
-# Первоначальная настройка
 
-- После запуска выполните миграции и сбор статических файлов:
+## Ссылка на развернутый проект
 
-    ~ sudo docker compose -f docker-compose.yml exec backend python manage.py migrate
+http://<ВАШ_IP_ИЛИ_ДОМЕН>
 
-    ~ sudo docker compose -f docker-compose.yml exec backend python manage.py collectstatic
 
-    ~ sudo docker compose -f docker-compose.yml exec backend cp -r /app/collected_static/. /backend_static/static/
+## Остановка проекта
 
-- После этого проект будет доступен по адресам:
+```bash
+sudo docker compose down
+```
 
-    http://localhost
-    http://localhost:8080
-    http://127.0.0.1
-    http://127.0.0.1:8080
 
-- P.S.: Backend будет работать на 8000 порту.
-
-# Загрузка ингредиентов для создания рецептов
-
-- Для корректной работы с рецептами необходимо заполнить базу данных ингредиентами:
-
-    ~ sudo docker compose -f docker-compose.production.yml exec backend python manage.py data_loader
-
-- Если в базе отсутствуют нужные ингредиенты или теги, обратитесь к администратору.
-
-# Остановка проекта
-
-- Чтобы завершить работу контейнеров, выполните:
-
-    ~ sudo docker compose -f docker-compose.yml down
-
-# Используемые технологии:
+## Используемые технологии
 
 - Python
 - Django
@@ -101,7 +108,8 @@ Docker автоматически загрузит образы, создаст 
 - Nginx
 - Gunicorn
 
-# Автор выполненного проекта:
 
-- Хмеленко А.П.
-- Ссылка на репозиторий Github: https://github.com/AnnaHmelenko/foodgram
+## Автор
+
+Анна Хмеленко  
+https://github.com/AnnaHmelenko/foodgram

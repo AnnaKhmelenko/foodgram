@@ -1,20 +1,21 @@
 from .avatar import AvatarSerializer
 from .ingredient import IngredientSerializer
 from .recipe import (
+    RecipeAuthorSerializer,
     RecipeReadSerializer,
     RecipeShortSerializer,
     RecipeWriteSerializer,
 )
 from .subscription import SubscriptionSerializer
 from .tag import TagSerializer
-from .user import CurrentUserSerializer, UserSerializer
+from .user import CurrentUserSerializer
 
 __all__ = [
     'AvatarSerializer',
-    'UserSerializer',
     'CurrentUserSerializer',
     'TagSerializer',
     'IngredientSerializer',
+    'RecipeAuthorSerializer',
     'RecipeReadSerializer',
     'RecipeWriteSerializer',
     'RecipeShortSerializer',

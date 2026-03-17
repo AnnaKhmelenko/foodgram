@@ -25,7 +25,6 @@ INSTALLED_APPS = [
     'users',
     'recipes',
     'api',
-    'core',
 ]
 
 MIDDLEWARE = [
@@ -137,7 +136,7 @@ DJOSER = {
     'LOGIN_FIELD': 'email',
     'USER_ID_FIELD': 'id',
     'SERIALIZERS': {
-        'user': 'api.serializers.user.UserSerializer',
+        'user': 'api.serializers.user.CurrentUserSerializer',
         'current_user': 'api.serializers.user.CurrentUserSerializer',
     },
     'PERMISSIONS': {

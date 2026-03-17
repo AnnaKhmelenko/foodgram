@@ -1,29 +1,28 @@
+from django.contrib.auth import get_user_model
 from django.db.models import Sum
 from django.http import HttpResponse
-from django.shortcuts import get_object_or_404, redirect
-
 from djoser.views import UserViewSet as DjoserUserViewSet
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.permissions import (
     AllowAny,
     IsAuthenticated,
+    IsAuthenticatedOrReadOnly,
 )
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
-from rest_framework.views import APIView
 
 from api.filters import IngredientFilter, RecipeFilter
 from api.permissions import IsAuthorOrReadOnly
 from api.serializers import (
     AvatarSerializer,
+    CurrentUserSerializer,
     IngredientSerializer,
     RecipeReadSerializer,
     RecipeShortSerializer,
     RecipeWriteSerializer,
     SubscriptionSerializer,
     TagSerializer,
-    UserSerializer,
 )
 from recipes.models import (
     Favorite,
@@ -33,7 +32,9 @@ from recipes.models import (
     ShoppingCart,
     Tag,
 )
-from users.models import Subscription, User
+from users.models import Subscription
+
+User = get_user_model()
 
 
 class TagViewSet(ReadOnlyModelViewSet):
@@ -53,7 +54,7 @@ class IngredientViewSet(ReadOnlyModelViewSet):
 
 class RecipeViewSet(ModelViewSet):
     queryset = Recipe.objects.all()
-    permission_classes = (IsAuthorOrReadOnly,)
+    permission_classes = (IsAuthenticatedOrReadOnly, IsAuthorOrReadOnly)
     filterset_class = RecipeFilter
 
     def get_serializer_class(self):
@@ -63,14 +64,17 @@ class RecipeViewSet(ModelViewSet):
 
     def _create_user_recipe_relation(self, model, request, pk=None):
         recipe = self.get_object()
+        _, created = model.objects.get_or_create(
+            user=request.user,
+            recipe=recipe,
+        )
 
-        if model.objects.filter(user=request.user, recipe=recipe).exists():
+        if not created:
             return Response(
                 {'errors': 'Рецепт уже добавлен.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        model.objects.create(user=request.user, recipe=recipe)
         serializer = RecipeShortSerializer(
             recipe,
             context={'request': request},
@@ -79,15 +83,17 @@ class RecipeViewSet(ModelViewSet):
 
     def _delete_user_recipe_relation(self, model, request, pk=None):
         recipe = self.get_object()
-        relation = model.objects.filter(user=request.user, recipe=recipe)
+        deleted_count, _ = model.objects.filter(
+            user=request.user,
+            recipe=recipe,
+        ).delete()
 
-        if not relation.exists():
+        if deleted_count == 0:
             return Response(
                 {'errors': 'Рецепт не найден.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        relation.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(
@@ -118,7 +124,7 @@ class RecipeViewSet(ModelViewSet):
     def download_shopping_cart(self, request):
         ingredients = (
             RecipeIngredient.objects
-            .filter(recipe__in_carts__user=request.user)
+            .filter(recipe__shoppingcarts__user=request.user)
             .values('ingredient__name', 'ingredient__measurement_unit')
             .annotate(total_amount=Sum('amount'))
             .order_by('ingredient__name')
@@ -159,7 +165,12 @@ class RecipeViewSet(ModelViewSet):
 
 class UserViewSet(DjoserUserViewSet):
     queryset = User.objects.all()
-    serializer_class = UserSerializer
+    serializer_class = CurrentUserSerializer
+
+    def get_permissions(self):
+        if self.action == 'me':
+            return [IsAuthenticated()]
+        return super().get_permissions()
 
     @action(
         detail=False,
@@ -169,12 +180,20 @@ class UserViewSet(DjoserUserViewSet):
     def subscriptions(self, request):
         authors = User.objects.filter(subscribers__user=request.user)
         page = self.paginate_queryset(authors)
+        if page is not None:
+            serializer = SubscriptionSerializer(
+                page,
+                many=True,
+                context={'request': request},
+            )
+            return self.get_paginated_response(serializer.data)
+
         serializer = SubscriptionSerializer(
-            page,
+            authors,
             many=True,
             context={'request': request},
         )
-        return self.get_paginated_response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(
         detail=True,
@@ -184,40 +203,41 @@ class UserViewSet(DjoserUserViewSet):
     def subscribe(self, request, id=None):
         author = self.get_object()
 
-        if request.user == author:
-            return Response(
-                {'errors': 'Нельзя подписаться на самого себя.'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
         if request.method == 'POST':
-            if Subscription.objects.filter(
+            if request.user == author:
+                return Response(
+                    {'errors': 'Нельзя подписаться на самого себя.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            _, created = Subscription.objects.get_or_create(
                 user=request.user,
                 author=author,
-            ).exists():
+            )
+
+            if not created:
                 return Response(
                     {'errors': 'Вы уже подписаны.'},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            Subscription.objects.create(user=request.user, author=author)
             serializer = SubscriptionSerializer(
                 author,
                 context={'request': request},
             )
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-        subscription = Subscription.objects.filter(
+        deleted_count, _ = Subscription.objects.filter(
             user=request.user,
             author=author,
-        )
-        if not subscription.exists():
+        ).delete()
+
+        if deleted_count == 0:
             return Response(
                 {'errors': 'Подписка не найдена.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        subscription.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(
@@ -235,8 +255,11 @@ class UserViewSet(DjoserUserViewSet):
             request.user.save()
 
             return Response(
-                {'avatar': request.build_absolute_uri(
-                    request.user.avatar.url)},
+                {
+                    'avatar': request.build_absolute_uri(
+                        request.user.avatar.url
+                    )
+                },
                 status=status.HTTP_200_OK,
             )
 
@@ -246,11 +269,3 @@ class UserViewSet(DjoserUserViewSet):
             request.user.save()
 
         return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-class RecipeShortLinkRedirectView(APIView):
-    permission_classes = (AllowAny,)
-
-    def get(self, request, short_code):
-        recipe = get_object_or_404(Recipe, short_code=short_code)
-        return redirect(f'/recipes/{recipe.id}/')

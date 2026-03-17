@@ -1,7 +1,10 @@
 from django.contrib import admin
+from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
-from users.models import Subscription, User
+from users.models import Subscription
+
+User = get_user_model()
 
 
 @admin.register(User)
@@ -15,7 +18,7 @@ class UserAdmin(BaseUserAdmin):
         'is_staff',
     )
     search_fields = ('email', 'username')
-    ordering = ('id',)
+    ordering = ('email',)
 
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
@@ -69,12 +72,10 @@ class UserAdmin(BaseUserAdmin):
 @admin.register(Subscription)
 class SubscriptionAdmin(admin.ModelAdmin):
     list_display = ('id', 'user', 'author')
-
     search_fields = (
         'user__email',
         'user__username',
         'author__email',
         'author__username',
     )
-
     autocomplete_fields = ('user', 'author')

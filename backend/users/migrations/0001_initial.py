@@ -2,7 +2,6 @@
 
 from django.db import migrations, models
 import django.utils.timezone
-import users.models
 
 
 class Migration(migrations.Migration):
@@ -35,10 +34,7 @@ class Migration(migrations.Migration):
             options={
                 'verbose_name': 'Пользователь',
                 'verbose_name_plural': 'Пользователи',
-                'ordering': ('id',),
+                'ordering': ('email',),
             },
-            managers=[
-                ('objects', users.models.UserManager()),
-            ],
         ),
     ]

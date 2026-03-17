@@ -1,34 +1,24 @@
+from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
-from api.serializers.recipe import RecipeShortSerializer
-from users.models import Subscription, User
+from api.serializers.recipe import (
+    RecipeAuthorSerializer,
+    RecipeShortSerializer
+)
+
+User = get_user_model()
 
 
-class SubscriptionSerializer(serializers.ModelSerializer):
-    is_subscribed = serializers.SerializerMethodField()
+class SubscriptionSerializer(RecipeAuthorSerializer):
     recipes = serializers.SerializerMethodField()
     recipes_count = serializers.SerializerMethodField()
 
-    class Meta:
+    class Meta(RecipeAuthorSerializer.Meta):
         model = User
-        fields = (
-            'id',
-            'email',
-            'username',
-            'first_name',
-            'last_name',
-            'avatar',
-            'is_subscribed',
+        fields = RecipeAuthorSerializer.Meta.fields + (
             'recipes',
             'recipes_count',
         )
-
-    def get_is_subscribed(self, obj):
-        request = self.context.get('request')
-        if not request or request.user.is_anonymous:
-            return False
-        return Subscription.objects.filter(
-            user=request.user, author=obj).exists()
 
     def get_recipes(self, obj):
         request = self.context.get('request')
