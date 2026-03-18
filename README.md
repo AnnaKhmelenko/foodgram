@@ -87,7 +87,7 @@ sudo docker compose exec backend python manage.py load_ingredients
 
 ## Ссылка на развернутый проект
 
-http://<ВАШ_IP_ИЛИ_ДОМЕН>
+https://spine-spencer-consent-sports.trycloudflare.com
 
 
 ## Остановка проекта
