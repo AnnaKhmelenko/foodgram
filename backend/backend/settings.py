@@ -9,7 +9,15 @@ load_dotenv(BASE_DIR / '.env')
 
 SECRET_KEY = os.getenv('SECRET_KEY', 'fallback-secret-key')
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '127.0.0.1,localhost').split(',')
+ALLOWED_HOSTS = os.getenv(
+    'ALLOWED_HOSTS',
+    '127.0.0.1,localhost,.trycloudflare.com'
+).split(',')
+
+CSRF_TRUSTED_ORIGINS = os.getenv(
+    'CSRF_TRUSTED_ORIGINS',
+    'https://*.trycloudflare.com,http://127.0.0.1,http://localhost'
+).split(',')
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -136,8 +144,8 @@ DJOSER = {
     'LOGIN_FIELD': 'email',
     'USER_ID_FIELD': 'id',
     'SERIALIZERS': {
-        'user': 'api.serializers.user.CurrentUserSerializer',
-        'current_user': 'api.serializers.user.CurrentUserSerializer',
+        'user': 'api.serializers.recipe.RecipeAuthorSerializer',
+        'current_user': 'api.serializers.recipe.RecipeAuthorSerializer',
     },
     'PERMISSIONS': {
         'user_create': ['rest_framework.permissions.AllowAny'],

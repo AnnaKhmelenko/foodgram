@@ -1,3 +1,4 @@
+from django.contrib.auth import get_user_model
 from django.db import transaction
 from rest_framework import serializers
 
@@ -11,7 +12,8 @@ from recipes.models import (
     ShoppingCart,
     Tag,
 )
-from users.models import User
+
+User = get_user_model()
 
 
 class RecipeAuthorSerializer(serializers.ModelSerializer):

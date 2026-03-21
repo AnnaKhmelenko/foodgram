@@ -16,7 +16,7 @@ from api.filters import IngredientFilter, RecipeFilter
 from api.permissions import IsAuthorOrReadOnly
 from api.serializers import (
     AvatarSerializer,
-    CurrentUserSerializer,
+    RecipeAuthorSerializer,
     IngredientSerializer,
     RecipeReadSerializer,
     RecipeShortSerializer,
@@ -165,7 +165,7 @@ class RecipeViewSet(ModelViewSet):
 
 class UserViewSet(DjoserUserViewSet):
     queryset = User.objects.all()
-    serializer_class = CurrentUserSerializer
+    serializer_class = RecipeAuthorSerializer
 
     def get_permissions(self):
         if self.action == 'me':

@@ -18,34 +18,27 @@ class RecipeIngredientInline(admin.TabularInline):
     validate_min = True
 
 
+class RecipesCountMixin:
+    def get_queryset(self, request):
+        return super().get_queryset(request).annotate(
+            recipes_total=Count('recipes', distinct=True)
+        )
+
+    @admin.display(description='Использований в рецептах')
+    def recipes_count(self, obj):
+        return obj.recipes_total
+
+
 @admin.register(Tag)
-class TagAdmin(admin.ModelAdmin):
+class TagAdmin(RecipesCountMixin, admin.ModelAdmin):
     list_display = ('id', 'name', 'slug', 'recipes_count')
     search_fields = ('name', 'slug')
 
-    def get_queryset(self, request):
-        return super().get_queryset(request).annotate(
-            recipes_total=Count('recipes', distinct=True)
-        )
-
-    @admin.display(description='Использований в рецептах')
-    def recipes_count(self, obj):
-        return obj.recipes_total
-
 
 @admin.register(Ingredient)
-class IngredientAdmin(admin.ModelAdmin):
+class IngredientAdmin(RecipesCountMixin, admin.ModelAdmin):
     list_display = ('id', 'name', 'measurement_unit', 'recipes_count')
     search_fields = ('name',)
-
-    def get_queryset(self, request):
-        return super().get_queryset(request).annotate(
-            recipes_total=Count('recipes', distinct=True)
-        )
-
-    @admin.display(description='Использований в рецептах')
-    def recipes_count(self, obj):
-        return obj.recipes_total
 
 
 @admin.register(Recipe)
