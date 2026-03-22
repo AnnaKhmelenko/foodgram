@@ -8,16 +8,14 @@ from .recipe import (
 )
 from .subscription import SubscriptionSerializer
 from .tag import TagSerializer
-from .user import CurrentUserSerializer
 
 __all__ = [
     'AvatarSerializer',
-    'CurrentUserSerializer',
-    'TagSerializer',
     'IngredientSerializer',
     'RecipeAuthorSerializer',
     'RecipeReadSerializer',
-    'RecipeWriteSerializer',
     'RecipeShortSerializer',
+    'RecipeWriteSerializer',
     'SubscriptionSerializer',
+    'TagSerializer',
 ]

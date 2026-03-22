@@ -16,8 +16,8 @@ from api.filters import IngredientFilter, RecipeFilter
 from api.permissions import IsAuthorOrReadOnly
 from api.serializers import (
     AvatarSerializer,
-    RecipeAuthorSerializer,
     IngredientSerializer,
+    RecipeAuthorSerializer,
     RecipeReadSerializer,
     RecipeShortSerializer,
     RecipeWriteSerializer,

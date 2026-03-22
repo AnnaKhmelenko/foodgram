@@ -77,7 +77,7 @@ http://localhost
 http://127.0.0.1
 
 ## Ссылка на развернутый проект
-https://embassy-minority-band-acquisition.trycloudflare.com
+https://protest-royalty-volunteer-dining.trycloudflare.com
 
 ## Остановка проекта
 
